@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flash MCU with WebUSB</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        #status {
+            padding: 10px;
+            text-align: center;
+        }
+        .status-disconnected {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .status-connected {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status-failed {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        button {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div id="status" class="status-disconnected">Status: Not Connected</div>
+    <button id="connect">Connect</button>
+    <script src="script.js"></script>
+</body>
+</html>
