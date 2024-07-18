@@ -1,4 +1,34 @@
 document.addEventListener("DOMContentLoaded", function() {
+    // Output console.log and console.error messages to the page as well
+    (function () {
+        if (!console) {
+            console = {};
+        }
+        var oldLog = console.log;
+        var oldError = console.error;
+        var logger = document.getElementById('log');
+
+        console.log = function (message) {
+            if (typeof message === 'object') {
+                logger.innerHTML += (JSON && JSON.stringify ? JSON.stringify(message) : String(message)) + '<br />';
+            } else {
+                logger.innerHTML += message + '<br />';
+            }
+            oldLog.apply(console, arguments);
+        };
+
+        console.error = function (message) {
+            if (typeof message === 'object' && message instanceof Error) {
+                logger.innerHTML += '<span class="log-error">' + message.message + '</span><br />';
+            } else if (typeof message === 'object') {
+                logger.innerHTML += '<span class="log-error">' + (JSON && JSON.stringify ? JSON.stringify(message) : String(message)) + '</span><br />';
+            } else {
+                logger.innerHTML += '<span class="log-error">' + message + '</span><br />';
+            }
+            oldError.apply(console, arguments);
+        };
+    })();
+
     if (typeof SharedArrayBuffer === "undefined") {
         // For security reasons, not available unless certain headers are set (see serv/https_server.py)
         // TODO: improve warning
