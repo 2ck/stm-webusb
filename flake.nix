@@ -97,13 +97,29 @@
         };
     in
     {
+        packages.${system}.default = pkgs.stdenv.mkDerivation {
+            name = "stlink-webusb-package";
+            buildInputs = [ libusb-webusb stlink-webusb ];
+            phases = [ "buildPhase" ];
+            buildPhase = ''
+                ln -sfT ${stlink-webusb} $out
+            '';
+        };
         devShells.${system}.default = pkgs.stdenv.mkDerivation {
             name = "shell";
-            buildInputs = [ libusb-webusb stlink-webusb dependencies ];
+            buildInputs = [ self.packages.${system}.default ] ++ dependencies;
             shellHook = ''
-                ln -sf ${stlink-webusb}/* .
                 exec $SHELL
             '';
+        };
+        apps.${system}.default =
+        let script = pkgs.writeShellScriptBin "run-server" ''
+            export PATH=${nixpkgs.lib.strings.makeBinPath [ pkgs.python3 ]}:$PATH
+            python3 server/http_server.py
+        '';
+        in {
+            type = "app";
+            program = "${script}/bin/run-server";
         };
     };
 }
