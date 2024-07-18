@@ -7,7 +7,10 @@
 </head>
 <body>
     <div id="status" class="status-disconnected">Status: Not Connected</div>
-    <button id="connect">Connect</button>
+    <div class="button-container">
+        <button id="connect">Connect</button>
+        <button id="upload" style="display: none;">Upload Firmware</button>
+    </div>
     <div id="log"></div>
     <script src="script.js"></script>
     <script src="libstlink.js"></script>

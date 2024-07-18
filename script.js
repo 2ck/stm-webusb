@@ -62,6 +62,8 @@ document.getElementById("connect").addEventListener("click", async () => {
             throw new Error("Could not connect to ST-LINK");
         }
         updateStatus("Status: Device Connected", "status-connected");
+        disableConnectButton();
+        document.getElementById("upload").style.display = 'block';
 
         stlink_printVersion(stlink);
 
@@ -71,34 +73,117 @@ document.getElementById("connect").addEventListener("click", async () => {
     }
 });
 
-async function cmdTransfer(device, type, length, ...values) {
+document.getElementById("upload").addEventListener("click", async () => {
     try {
-        let transfer;
-        if (type === "out") {
-            if (values.length > length) {
-                console.warn("Number of values exceeds specified length. Extra values will be truncated.");
+        const fileInput = document.createElement("input");
+        fileInput.type = "file";
+        fileInput.accept = ".bin";
+        fileInput.onchange = async function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                console.log(`Selected file: ${file.name}`);
+                try {
+                    await prepareFlashing();
+                    await handleFileUpload(file);
+                } catch (error) {
+                    console.error(error);
+                    updateStatus("Status: Firmware Upload Failed", "status-failed");
+                } finally {
+                    await cleanupPostFlashing();
+                }
             }
-            // Pad command to length with 0-Bytes
-            let arr = new Uint8Array(length);
-            arr.set(values.slice(0, length));
+        };
+        fileInput.click();
 
-            transfer = await device.transferOut(0x01, arr);
-        } else if (type === "in") {
-            transfer = await device.transferIn(0x01, length);
-        } else {
-            throw new Error("Invalid transfer type");
-        }
-
-        if (transfer.status !== "ok") {
-            throw new Error("Transfer failed");
-        }
-
-        if (type === "in") {
-            console.log(`Command-${type} return:`, new Uint8Array(transfer.data.buffer));
-        }
     } catch (error) {
-        console.error(`Command-${type} error:`, error.message);
+        console.error(error);
+        updateStatus("Status: Firmware Upload Failed", "status-failed");
     }
+});
+
+async function handleFileUpload(file) {
+    const arrayBuffer = await readFileAsArrayBuffer(file);
+    const uint8Array = new Uint8Array(arrayBuffer);
+    const filePath = `/tmp/${file.name}`;
+
+    Module.FS_createDataFile('/', filePath, uint8Array, true, true);
+    try {
+        // enum erase_type_t { NO_ERASE = 0, SECTION_ERASE = 1, MASS_ERASE = 2, };
+        const fwriteFlashStatus = await stlink_fwrite_flash(stlink, filePath, 0x08000000, 2);
+        if (fwriteFlashStatus !== 0) {
+            throw new Error(`Could not write to flash, error ${fwriteFlashStatus}`);
+        }
+        console.log(`Wrote ${file.name} to flash memory`);
+    } finally {
+        Module.FS_unlink(filePath);
+    }
+}
+
+async function prepareFlashing() {
+    try{
+        const debugStatus = await stlink_force_debug(stlink);
+        if (debugStatus !== 0) {
+            throw new Error("Could not force debug mode");
+        }
+        console.log("Debug mode activated");
+
+        const status = await stlink_status(stlink);
+        if (status !== 0) {
+            throw new Error("Could not force get ST-LINK status");
+        }
+        console.log("Got ST-LINK status");
+
+        const base_OFFSET = 102500;
+        const flash_base = getValue(stlink + base_OFFSET, "i32");
+        const flash_size = getValue(stlink + base_OFFSET + 4, "i32");
+        console.log(`Flash base addr: 0x${flash_base.toString(16).toUpperCase()}, size: 0x${flash_size.toString(16).toUpperCase()}`);
+
+        // const eraseFlashStatus = await stlink_erase_flash_mass(stlink);
+        // if (eraseFlashStatus !== 0) {
+        //     throw new Error("Could not mass-erase flash");
+        // }
+        // console.log("Mass-erased flash memory");
+
+    } catch (error) {
+        console.error("Error preparing for flashing:", error);
+    }
+}
+
+async function cleanupPostFlashing() {
+    try {
+        const resetStatus = await stlink_reset(stlink, 0);
+        if (resetStatus !== 0) {
+            throw new Error("Could not reset device");
+        }
+        console.log("Device reset successfully");
+
+        const runStatus = await stlink_run(stlink, 0);
+        if (runStatus !== 0) {
+            throw new Error("Could not run device");
+        }
+        console.log("Device running again");
+
+        const exitDebugStatus = await stlink_exit_debug_mode(stlink);
+        if (exitDebugStatus !== 0) {
+            throw new Error("Could not exit debug mode");
+        }
+        console.log("Debug mode exited");
+    } catch (error) {
+        console.error("Error cleaning up post-flashing:", error);
+    }
+}
+
+function readFileAsArrayBuffer(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            resolve(event.target.result);
+        };
+        reader.onerror = function() {
+            reject(new Error("Error reading file"));
+        };
+        reader.readAsArrayBuffer(file);
+    });
 }
 
 function updateStatus(message, statusClass) {

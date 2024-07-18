@@ -78,3 +78,9 @@ button:disabled {
 .log-error {
     color: hsl(0, 100%, 70%);
 }
+
+.button-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
