@@ -1,5 +1,12 @@
-let device;
 document.addEventListener("DOMContentLoaded", function() {
+    if (typeof SharedArrayBuffer === "undefined") {
+        // For security reasons, not available unless certain headers are set (see serv/https_server.py)
+        // TODO: improve warning
+        updateStatus("Error: SharedArrayBuffer is not available.", "status-failed");
+        disableConnectButton();
+        return;
+    }
+
     if (typeof navigator.usb === "undefined") {
         // Not supported by Firefox, mostly just Chrome
         // TODO: improve warning, add link to availability
@@ -9,33 +16,25 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 });
 
+let stlink;
 document.getElementById("connect").addEventListener("click", async () => {
     try {
         // WebUSB requires user permission/interaction for USB device access
         // Filter for devices with ST vendor ID
-        device = await navigator.usb.requestDevice({
+        await navigator.usb.requestDevice({
             filters: [{ vendorId: 0x0483 }]
         });
 
-        await device.open();
-        await device.selectConfiguration(1);
-        await device.claimInterface(0);
+        const loglevel = 0;
 
+        stlink = await stlink_open_usb(loglevel, 1, null, 0);
+        if (stlink === 0) {
+            throw new Error("Could not connect to ST-LINK");
+        }
         updateStatus("Status: Device Connected", "status-connected");
 
-        // Probably: Get version/status
-        cmdTransfer(device, "out", 16, 0xF1);
-        cmdTransfer(device, "in", 6);
+        stlink_printVersion(stlink);
 
-        // Probably: Some reset
-        // from manual: Green LED ON after a successful target communication initialization
-        cmdTransfer(device, "out", 16, 0xF2, 0x30, 0xA3);
-        cmdTransfer(device, "in", 2);
-
-        // Probably: Communication/debug mode activation
-        // from manual: Blinking red/green during communication with the target
-        cmdTransfer(device, "out", 16, 0xF2, 0x07, 0x00, 0xED, 0x00, 0xE0, 0x04);
-        cmdTransfer(device, "in", 4);
     } catch (error) {
         console.error(error);
         updateStatus("Status: Connection Failed", "status-failed");
