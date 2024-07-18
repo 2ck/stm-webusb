@@ -12,9 +12,9 @@ It allows users to connect to ST-Link devices, and:
 
 ## Limitations
 
-Your browser must [support WebUSB](https://developer.mozilla.org/en-US/docs/API/USB#browser_compatibility). **(TLDR: No Firefox.)**
+Your browser must [support WebUSB](https://developer.mozilla.org/en-US/docs/Web/API/USB#browser_compatibility). **(TLDR: No Firefox.)**
 
-SharedArrayBuffer must be enabled, which requires the following [two headers](https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/SharedArrayBuffer#security_requirements) to be set:
+SharedArrayBuffer must be enabled, which requires the following [two headers](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer#security_requirements) to be set:
 ``` http
 Cross-Origin-Opener-Policy: same-origin
 Cross-Origin-Embedder-Policy: require-corp
