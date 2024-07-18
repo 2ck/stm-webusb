@@ -1,0 +1,62 @@
+{
+  "nodes": {
+    "libusb": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1716928513,
+        "narHash": "sha256-+Uiw75wrGny0lnl4a3Sulrb3VCAK9EwGkSelnuX2eEg=",
+        "owner": "libusb",
+        "repo": "libusb",
+        "rev": "e678b3fad58a508cbd0a6e6dc777fb48346f948b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "libusb",
+        "repo": "libusb",
+        "type": "github"
+      }
+    },
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1720957393,
+        "narHash": "sha256-oedh2RwpjEa+TNxhg5Je9Ch6d3W1NKi7DbRO1ziHemA=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "693bc46d169f5af9c992095736e82c3488bf7dbb",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "root": {
+      "inputs": {
+        "libusb": "libusb",
+        "nixpkgs": "nixpkgs",
+        "stlink": "stlink"
+      }
+    },
+    "stlink": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1717094226,
+        "narHash": "sha256-8eqt0Z1sBgwgYjgtHDOVy2oFEKZkIZn7tUktr4kLNp8=",
+        "owner": "stlink-org",
+        "repo": "stlink",
+        "rev": "32ce4bf88a816fb6a9841a33e6c5f6b593a9b927",
+        "type": "github"
+      },
+      "original": {
+        "owner": "stlink-org",
+        "ref": "testing",
+        "repo": "stlink",
+        "type": "github"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}
