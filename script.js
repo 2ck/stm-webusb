@@ -1,8 +1,17 @@
 let device;
-let firmware;
+document.addEventListener("DOMContentLoaded", function() {
+    if (typeof navigator.usb === "undefined") {
+        // Not supported by Firefox, mostly just Chrome
+        // TODO: improve warning, add link to availability
+        updateStatus("Error: WebUSB is not supported by your browser.", "status-failed");
+        disableConnectButton();
+        return;
+    }
+});
 
 document.getElementById("connect").addEventListener("click", async () => {
     try {
+        // WebUSB requires user permission/interaction for USB device access
         // Filter for devices with ST vendor ID
         device = await navigator.usb.requestDevice({
             filters: [{ vendorId: 0x0483 }]
@@ -67,4 +76,9 @@ function updateStatus(message, statusClass) {
     const statusDiv = document.getElementById("status");
     statusDiv.innerText = message;
     statusDiv.className = statusClass;
+}
+
+function disableConnectButton() {
+    const connectButton = document.getElementById('connect');
+    connectButton.disabled = true;
 }
