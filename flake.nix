@@ -20,30 +20,29 @@
             name = "libusb-webusb";
             src = libusb;
             nativeBuildInputs = [
-                pkgs.autoconf
                 pkgs.autoreconfHook
-                pkgs.automake
                 pkgs.pkg-config
             ];
-            phases = [ "unpackPhase" "configurePhase" "buildPhase" ];
-            unpackPhase = ''
-                export BUILDDIR=$(mktemp -d)
-                export HOME=$BUILDDIR
-                cp -r $src/. $BUILDDIR/
-                chmod u+w -R $BUILDDIR/
-                cd $BUILDDIR
-            '';
-            configurePhase = ''
-                ls -la
-                autoreconf -fiv
-                emconfigure ./configure --host=wasm32-emscripten --prefix=$out
-            '';
-            buildPhase = ''
-                emmake make install
-            '';
             outputs = [ "out" ];
+            configurePhase = ''
+                export HOME=$TMPDIR
+                runHook preConfigure
+
+                emconfigure ./configure --host=wasm32-emscripten --prefix=$out
+
+                runHook postConfigure
+            '';
+            checkPhase = ''
+                echo "Check phase skipped"
+            '';
         };
-        linkerFlags = "--bind -s ASYNCIFY -s NO_ALLOW_MEMORY_GROWTH -s USE_PTHREADS -s FORCE_FILESYSTEM -s WASM_BIGINT -s WASM";
+        linkerFlags = ''
+            --bind -s ASYNCIFY \
+            -s NO_ALLOW_MEMORY_GROWTH \
+            -s USE_PTHREADS \
+            -s FORCE_FILESYSTEM \
+            -s WASM_BIGINT -s WASM \
+        '';
         stlink-webusb = pkgs.emscriptenStdenv.mkDerivation {
             name = "stlink-webusb";
             src = stlink;
@@ -51,29 +50,29 @@
                 pkgs.cmake
                 pkgs.git
                 pkgs.pkg-config
+                libusb-webusb
             ];
-            phases = [ "unpackPhase" "patchPhase" "configurePhase" "buildPhase" "installPhase" ];
-            unpackPhase = ''
-                export BUILDDIR=$(mktemp -d)
-                export HOME=$BUILDDIR
-                cp -r $src/. $BUILDDIR
-                # chmod u+w -R $BUILDDIR/
-                cd $BUILDDIR
+            dontStrip = true;
+            outputs = [ "out" ];
+            configurePhase = ''
+                export HOME=$TMPDIR
+                runHook preConfigure
+
+                export CMAKEFLAGS='-DCMAKE_C_FLAGS="-D__linux__" \
+                    -DCMAKE_EXE_LINKER_FLAGS="${toString linkerFlags}" \
+                    -DCMAKE_INSTALL_PREFIX="$HOME" \
+                    -DSTLINK_MODPROBED_DIR="$HOME/etc/modprobe.d" \
+                    -DSTLINK_UDEV_RULES_DIR="$TMPDIR/lib/udev/rules.d"'
+
+                runHook postConfigure
             '';
-            patchPhase = ''
+            postPatch = ''
                 substituteInPlace CMakeLists.txt --replace-fail "LIB_SHARED} SHARED" "LIB_SHARED} STATIC"
                 substituteInPlace cmake/modules/Findlibusb.cmake --replace-fail "HINTS /usr/include" "HINTS ${libusb-webusb}/include"
                 substituteInPlace cmake/modules/Findlibusb.cmake --replace-fail "HINTS /usr /usr/local" "HINTS ${libusb-webusb}/lib"
+                # substituteInPlace src/stlink-lib/common_flash.c --replace-fail "ELOG(\"Invalid address, it should be within 0x%08x - 0x%08x\n\", sl->flash_base, logvar);" "ELOG(\"Invalid address 0x%08x, it should be within 0x%08x - 0x%08x\n\", addr, sl->flash_base, logvar);"
             '';
-            configurePhase = ''
-                export CMAKEFLAGS='\
-                    -DCMAKE_C_FLAGS="-D__linux__" \
-                    -DCMAKE_EXE_LINKER_FLAGS="${toString linkerFlags}"'
-            '';
-            buildPhase = ''
-                emmake make
-            '';
-            installPhase = ''
+            postInstall = ''
                 emcc -o libstlink.js \
                     -I${libusb-webusb}/include -Iinc/ \
                     -L${libusb-webusb}/lib -Lbuild/Release/lib/ -lstlink -lusb-1.0 \
@@ -96,15 +95,17 @@
                 cp *.{js,wasm,data} $out/
                 cp -r config/chips $out/
             '';
-            outputs = [ "out" ];
+            checkPhase = ''
+                echo "Check phase skipped"
+            '';
         };
     in
     {
         packages.${system}.default = pkgs.stdenv.mkDerivation {
             name = "stlink-webusb-package";
-            buildInputs = [ libusb-webusb stlink-webusb ];
-            phases = [ "buildPhase" ];
-            buildPhase = ''
+            buildInputs = [ stlink-webusb ];
+            phases = [ "installPhase" ];
+            installPhase = ''
                 ln -sfT ${stlink-webusb} $out
             '';
         };
