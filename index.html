@@ -13,6 +13,17 @@
     </div>
     <div id="log"></div>
     <script src="script.js"></script>
+    <script>
+        // Override the datafile directory (default is the root folder)
+        var Module = {
+            locateFile: function(path, scriptDirectory) {
+                if (path === 'libstlink.data') {
+                    return 'result/' + path;
+                }
+                return scriptDirectory + path;
+            }
+        };
+    </script>
     <script src="result/libstlink.js"></script>
     <script src="wrapper.js"></script>
 </body>

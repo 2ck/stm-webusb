@@ -1,5 +1,6 @@
 Module.onRuntimeInitialized = function() {
     // Wrap the necessary stlink functions as async
+    window.init_chipids = Module.cwrap('init_chipids', 'void', ['string'], { async: true });
     window.stlink_open_usb = Module.cwrap('stlink_open_usb', 'number', ['number', 'number', 'number', 'number'], { async: true });
     window.stlink_enter_swd_mode = Module.cwrap('stlink_enter_swd_mode', 'number', ['number'], { async : true });
     window.stlink_reset = Module.cwrap('stlink_reset', 'number', ['number', 'number'], { async: true });

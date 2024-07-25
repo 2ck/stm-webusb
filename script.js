@@ -55,6 +55,8 @@ document.getElementById("connect").addEventListener("click", async () => {
             filters: [{ vendorId: 0x0483 }]
         });
 
+        await init_chipids("/chips");
+
         const loglevel = 0;
 
         stlink = await stlink_open_usb(loglevel, 1, null, 0);
@@ -138,11 +140,11 @@ async function prepareFlashing() {
         const flash_size = getValue(stlink + base_OFFSET + 4, "i32");
         console.log(`Flash base addr: 0x${flash_base.toString(16).toUpperCase()}, size: 0x${flash_size.toString(16).toUpperCase()}`);
 
-        // const eraseFlashStatus = await stlink_erase_flash_mass(stlink);
-        // if (eraseFlashStatus !== 0) {
-        //     throw new Error("Could not mass-erase flash");
-        // }
-        // console.log("Mass-erased flash memory");
+        const eraseFlashStatus = await stlink_erase_flash_mass(stlink);
+        if (eraseFlashStatus !== 0) {
+            throw new Error("Could not mass-erase flash");
+        }
+        console.log("Mass-erased flash memory");
 
     } catch (error) {
         console.error("Error preparing for flashing:", error);

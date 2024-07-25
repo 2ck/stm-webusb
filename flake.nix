@@ -78,6 +78,7 @@
                     -I${libusb-webusb}/include -Iinc/ \
                     -L${libusb-webusb}/lib -Lbuild/Release/lib/ -lstlink -lusb-1.0 \
                     -s EXPORTED_FUNCTIONS="[ \
+                        '_init_chipids', \
                         '_stlink_open_usb', \
                         '_stlink_enter_swd_mode', \
                         '_stlink_reset', \
@@ -89,9 +90,11 @@
                         '_stlink_exit_debug_mode', \
                         '_stlink_close' \
                     ]" -s EXPORTED_RUNTIME_METHODS="['ccall', 'cwrap']" \
+                    --preload-file config/chips@/chips \
                     ${toString linkerFlags}
                 mkdir -p $out
-                cp *.{js,wasm} $out/
+                cp *.{js,wasm,data} $out/
+                cp -r config/chips $out/
             '';
             outputs = [ "out" ];
         };
