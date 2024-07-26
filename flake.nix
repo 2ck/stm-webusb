@@ -36,13 +36,7 @@
                 echo "Check phase skipped"
             '';
         };
-        linkerFlags = ''
-            --bind -s ASYNCIFY \
-            -s NO_ALLOW_MEMORY_GROWTH \
-            -s USE_PTHREADS \
-            -s FORCE_FILESYSTEM \
-            -s WASM_BIGINT -s WASM \
-        '';
+        emLinkerFlags = "--bind -s ASYNCIFY -s USE_PTHREADS -s FORCE_FILESYSTEM";
         stlink-webusb = pkgs.emscriptenStdenv.mkDerivation {
             name = "stlink-webusb";
             src = stlink;
@@ -59,7 +53,7 @@
                 runHook preConfigure
 
                 export CMAKEFLAGS='-DCMAKE_C_FLAGS="-D__linux__" \
-                    -DCMAKE_EXE_LINKER_FLAGS="${toString linkerFlags}" \
+                    -DCMAKE_EXE_LINKER_FLAGS="${toString emLinkerFlags}" \
                     -DCMAKE_INSTALL_PREFIX="$HOME" \
                     -DSTLINK_MODPROBED_DIR="$HOME/etc/modprobe.d" \
                     -DSTLINK_UDEV_RULES_DIR="$TMPDIR/lib/udev/rules.d"'
@@ -68,14 +62,11 @@
             '';
             postPatch = ''
                 substituteInPlace CMakeLists.txt --replace-fail "LIB_SHARED} SHARED" "LIB_SHARED} STATIC"
-                substituteInPlace cmake/modules/Findlibusb.cmake --replace-fail "HINTS /usr/include" "HINTS ${libusb-webusb}/include"
-                substituteInPlace cmake/modules/Findlibusb.cmake --replace-fail "HINTS /usr /usr/local" "HINTS ${libusb-webusb}/lib"
-                # substituteInPlace src/stlink-lib/common_flash.c --replace-fail "ELOG(\"Invalid address, it should be within 0x%08x - 0x%08x\n\", sl->flash_base, logvar);" "ELOG(\"Invalid address 0x%08x, it should be within 0x%08x - 0x%08x\n\", addr, sl->flash_base, logvar);"
             '';
             postInstall = ''
                 emcc -o libstlink.js \
-                    -I${libusb-webusb}/include -Iinc/ \
-                    -L${libusb-webusb}/lib -Lbuild/Release/lib/ -lstlink -lusb-1.0 \
+                    -L${libusb-webusb}/lib -lusb-1.0 -Lbuild/Release/lib/ -lstlink \
+                    ${toString emLinkerFlags} \
                     -s EXPORTED_FUNCTIONS="[ \
                         '_init_chipids', \
                         '_stlink_open_usb', \
@@ -89,8 +80,7 @@
                         '_stlink_exit_debug_mode', \
                         '_stlink_close' \
                     ]" -s EXPORTED_RUNTIME_METHODS="['ccall', 'cwrap']" \
-                    --preload-file config/chips@/chips \
-                    ${toString linkerFlags}
+                    --preload-file config/chips@/chips
                 mkdir -p $out
                 cp *.{js,wasm,data} $out/
                 cp -r config/chips $out/
