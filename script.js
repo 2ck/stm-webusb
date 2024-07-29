@@ -1,3 +1,5 @@
+let stlink;
+
 document.addEventListener("DOMContentLoaded", function() {
     // Output console.log and console.error messages to the page as well
     (function () {
@@ -44,10 +46,11 @@ document.addEventListener("DOMContentLoaded", function() {
         disableConnectButton();
         return;
     }
+
+    document.getElementById("connect").addEventListener("click", connect);
 });
 
-let stlink;
-document.getElementById("connect").addEventListener("click", async () => {
+async function connect() {
     try {
         // WebUSB requires user permission/interaction for USB device access
         // Filter for devices with ST vendor ID
@@ -64,16 +67,33 @@ document.getElementById("connect").addEventListener("click", async () => {
             throw new Error("Could not connect to ST-LINK");
         }
         updateStatus("Status: Device Connected", "status-connected");
-        disableConnectButton();
-        document.getElementById("upload").style.display = 'block';
 
         stlink_printVersion(stlink);
+
+        swapConnectDisconnect();
 
     } catch (error) {
         console.error(error);
         updateStatus("Status: Connection Failed", "status-failed");
     }
-});
+};
+
+async function disconnect() {
+    try {
+        const exitDebugStatus = await stlink_exit_debug_mode(stlink);
+        if (exitDebugStatus !== 0) {
+            throw new Error("Could not exit debug mode");
+        }
+        console.log("Debug mode exited");
+
+        updateStatus("Status: Not Connected", "status-disconnected");
+
+        swapConnectDisconnect();
+    } catch (error) {
+        console.error(error);
+        updateStatus("Status: Disconnect Failed", "status-failed");
+    }
+};
 
 document.getElementById("upload").addEventListener("click", async () => {
     try {
@@ -164,12 +184,6 @@ async function cleanupPostFlashing() {
             throw new Error("Could not run device");
         }
         console.log("Device running again");
-
-        const exitDebugStatus = await stlink_exit_debug_mode(stlink);
-        if (exitDebugStatus !== 0) {
-            throw new Error("Could not exit debug mode");
-        }
-        console.log("Debug mode exited");
     } catch (error) {
         console.error("Error cleaning up post-flashing:", error);
     }
@@ -198,3 +212,23 @@ function disableConnectButton() {
     const connectButton = document.getElementById('connect');
     connectButton.disabled = true;
 }
+
+function swapConnectDisconnect() {
+    const connectButton = document.getElementById('connect');
+    if (connectButton.innerText === "Connect") {
+        connectButton.innerText = "Disconnect";
+        connectButton.removeEventListener("click", connect);
+        connectButton.addEventListener("click", disconnect);
+
+        document.getElementById("upload").style.display = 'block';
+    } else if (connectButton.innerText === "Disconnect") {
+        connectButton.innerText = "Connect";
+        connectButton.removeEventListener("click", disconnect);
+        connectButton.addEventListener("click", connect);
+
+        document.getElementById("upload").style.display = 'none';
+    } else {
+        // Something must have gone really wrong
+        throw new Error("Unexpected button state");
+    }
+};
