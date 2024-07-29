@@ -1,0 +1,86 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: hsl(210, 15%, 95%);
+    color: hsl(210, 15%, 20%);
+    margin: 0;
+    padding: 0;
+}
+
+#status {
+    padding: 10px;
+    text-align: center;
+}
+
+.status-disconnected {
+    background-color: hsl(0, 0%, 90%);
+    color: hsl(0, 0%, 20%);
+}
+
+.status-connected {
+    background-color: hsl(120, 60%, 90%);
+    color: hsl(120, 40%, 30%);
+}
+
+.status-failed {
+    background-color: hsl(0, 100%, 90%);
+    color: hsl(0, 80%, 40%);
+}
+
+button {
+    margin: 20px 10px;
+    padding: 12px 24px;
+    font-size: 16px;
+    background-color: hsl(0, 0%, 90%);
+    color: hsl(0, 0%, 20%);
+    border: 2px solid hsl(0, 0%, 85%);
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s, box-shadow 0.2s;
+}
+
+button:hover {
+    background-color: hsl(0, 0%, 85%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+button:active {
+    background-color: hsl(0, 0%, 80%);
+    border: 2px solid hsl(0, 0%, 80%);
+    transform: translateY(0);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+button:disabled {
+    background-color: hsl(0, 0%, 70%);
+    color: hsl(0, 0%, 50%);
+    border: 2px solid hsl(0, 0%, 70%);
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+#log {
+    font-family: monospace;
+    background-color: hsl(0, 0%, 10%);
+    color: hsl(0, 0%, 100%);
+    padding: 10px;
+    border: 1px solid hsl(0, 0%, 40%);
+    width: calc(100% - 22px);
+    height: 500px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    box-sizing: border-box;
+    margin: 20px auto;
+    border-radius: 5px;
+}
+
+.log-error {
+    color: hsl(0, 100%, 70%);
+}
+
+.button-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
