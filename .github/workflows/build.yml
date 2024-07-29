@@ -1,4 +1,4 @@
-name: "Build with Nix"
+name: "Build with Nix and publish to Cloudflare pages"
 on:
   pull_request:
   push:
@@ -11,17 +11,20 @@ jobs:
       with:
         github_access_token: ${{ secrets.GITHUB_TOKEN }}
     - run: nix build
+    - run: |
+        mkdir -p output
+        cp -r result output/
+        cp *.{html,js,css} output/
+        echo "/*" > output/_headers
+        echo "  Cross-Origin-Opener-Policy: same-origin" >> output/_headers
+        echo "  Cross-Origin-Embedder-Policy: require-corp" >> output/_headers
     - uses: actions/upload-artifact@v4
       with:
-        path: |
-          *.html
-          *.js
-          *.css
-          result
+        path: output
     - name: Publish to Cloudflare Pages
       uses: cloudflare/pages-action@v1
       with:
         apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }} 
         projectName: stm-webusb
-        directory: .
+        directory: output
